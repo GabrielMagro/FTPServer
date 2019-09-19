@@ -20,7 +20,7 @@ public:
         issTimestamp >> this->timestamp;
     }
 
-    string getDataHora() {
+    string getValue() {
         char buff[20];
         time_t now = this->timestamp;
         strftime(buff, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
@@ -126,7 +126,6 @@ public:
 class Sistema {
 private:
     vector<Registro *> logs;
-
     //filtros
     int port1=-1, port2=-1, size1=-1, size2=-1, replyCod=-1;
     string dataHoraInicial="", dataHoraFinal="", ip="", comando="", mime="", replyMsg="";
@@ -396,7 +395,33 @@ public:
         }
     }
 
+    void visualizarDados() {
+        vector<Registro *> logsValidos = this->getLogsValidos();
+        for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
+            cout << "Data hora:             " << (*it)->getDataHora()->getValue() << endl;
+            cout << "IP de Origem:          " << (*it)->getOrigemIp() << endl;
+            cout << "Porta de Origem:       " << (*it)->getOrigemPorta() << endl;
+            cout << "Comando:               " << (*it)->getComando()<< endl;
+            cout << "Mime Type:             " << (*it)->getMimeType() << endl;
+            if ((*it)->getFileSize() == 0) {
+                cout << "Tamanho do Arquivo:    " << endl;
+            } else {
+                cout << "Tamanho do Arquivo:    " << (*it)->getFileSize() << endl;
+            }
+            if ((*it)->getReplyCode() == 0) {
+                cout << "Codigo de Resposta:    " << endl;
+            } else {
+                cout << "Codigo de Resposta:    " << (*it)->getReplyCode() << endl;
+            }
+            cout << "Mensagem de Resposta:  " << (*it)->getReplyMsg() << endl;
+            cout << endl;
+        }
+    }
 
+    //TODO exportar
+    void exportar() {
+
+    }
 };
 
 
@@ -427,9 +452,10 @@ int main() {
                 obj->mostraFiltrosAtivos();
                 break;
             case 4:
-
+                obj->visualizarDados();
                 break;
             case 5:
+                obj->exportar();
                 break;
 
         }
