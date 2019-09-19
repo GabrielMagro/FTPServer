@@ -215,8 +215,7 @@ public:
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
             string str = this->toUpper((*it)->getMimeType());
-            string str1 = mime;
-            size_t found = str.find(str1);
+            size_t found = str.find(mime);
             if (!(found != string::npos)) {
                 (*it)->setFiltro(false);
             }
@@ -245,9 +244,8 @@ public:
         replyMsg = this->toUpper(replyMsg);
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
-            string str = this->toUpper((*it)->getMimeType());
-            string str1 = replyMsg;
-            size_t found = str.find(str1);
+            string str = this->toUpper((*it)->getReplyMsg());
+            size_t found = str.find(replyMsg);
             if (!(found != string::npos)) {
                 (*it)->setFiltro(false);
             }
@@ -429,7 +427,6 @@ int main() {
     int opcao;
     string nomeArq = "ftp.log";
     Sistema *obj = new Sistema(nomeArq);
-
 
     while (1) {
         system("cls");
