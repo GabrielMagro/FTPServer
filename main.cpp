@@ -128,9 +128,8 @@ private:
     vector<Registro *> logs;
 
     //filtros
-    // {f}+{NomeAtributo}
-    int fPort1=-1, fPort2=-1, fSize1=-1, fSize2=-1, fReplyCod=-1;
-    string fDataHoraInicial="", fDataHoraFinal="", fIp="", fComando="", fMime="", fReplyMsg="";
+    int port1=-1, port2=-1, size1=-1, size2=-1, replyCod=-1;
+    string dataHoraInicial="", dataHoraFinal="", ip="", comando="", mime="", replyMsg="";
 public:
     Sistema(string arqLog) {
         fstream arq;
@@ -167,13 +166,24 @@ public:
         for (vector<Registro *>::iterator it = this->logs.begin(); it != this->logs.end(); ++it) {
             (*it)->setFiltro(true);
         }
+        //valores padrao
+        this->port1=-1;
+        this->port2=-1;
+        this->size1=-1;
+        this->size2=-1;
+        this->replyCod=-1;
+        this->dataHoraInicial="";
+        this->dataHoraFinal="";
+        this->ip="";
+        this->comando="";
+        this->mime="";
+        this->replyMsg="";
     }
 
     //TODO FILTRO O ESQUEMA DO CIN
     void filtroData() {}
 
     void filtroIp(string ip) {
-        this->fIp=ip;
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
             if ((*it)->getOrigemIp() != ip) {
@@ -183,8 +193,6 @@ public:
     }
 
     void filtroPortas(int port1, int port2) {
-        this->fPort1=port1;
-        this->fPort2=port2;
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
             if ((*it)->getOrigemPorta() < port1 || (*it)->getOrigemPorta() > port2) {
@@ -194,7 +202,6 @@ public:
     }
 
     void filtroComando(string comando) {
-        this->fComando=comando;
         comando = this->toUpper(comando);
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
@@ -205,7 +212,6 @@ public:
     }
 
     void filtroMimeType(string mime) {
-        this->fMime=mime;
         mime = this->toUpper(mime);
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
@@ -219,8 +225,6 @@ public:
     }
 
     void filtroTamanho(int size1, int size2) {
-        this->fSize1=size1;
-        this->fSize2=size2;
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
             if ((*it)->getFileSize() < size1 || (*it)->getFileSize() > size2) {
@@ -230,7 +234,6 @@ public:
     }
 
     void filtroReplyCode(int codigo) {
-        this->fReplyCod=codigo;
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
             if ((*it)->getReplyCode() != codigo) {
@@ -240,7 +243,6 @@ public:
     }
 
     void filtroReplyMsg(string replyMsg) {
-        this->fReplyMsg=replyMsg;
         replyMsg = this->toUpper(replyMsg);
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
@@ -256,32 +258,32 @@ public:
     void mostraFiltrosAtivos() {
 
         cout << "Filtros: " << endl;
-        if (this->fDataHoraInicial != "") {
-            cout << "Data hora inicial: " << this->fDataHoraInicial << endl;
-            cout << "Data hora final: " << this->fDataHoraFinal << endl;
+        if (this->dataHoraInicial != "") {
+            cout << "Data hora inicial: " << this->dataHoraInicial << endl;
+            cout << "Data hora final: " << this->dataHoraFinal << endl;
         }
-        if (this->fIp != "") {
-            cout << "IP: " << this->fIp << endl;
+        if (this->ip != "") {
+            cout << "IP: " << this->ip << endl;
         }
-        if (this->fPort1 > 0) {
-            cout << "Porta inicial: " << this->fPort1 << endl;
-            cout << "Porta final: " << this->fPort2 << endl;
+        if (this->port1 > 0) {
+            cout << "Porta inicial: " << this->port1 << endl;
+            cout << "Porta final: " << this->port2 << endl;
         }
-        if (this->fComando != "") {
-            cout << "Comando: " << this->fComando << endl;
+        if (this->comando != "") {
+            cout << "Comando: " << this->comando << endl;
         }
-        if (this->fMime != "") {
-            cout << "Mime Type: " << this->fMime << endl;
+        if (this->mime != "") {
+            cout << "Mime Type: " << this->mime << endl;
         }
-        if (this->fSize1 > 0) {
-            cout << "Tamanho inicial: " << this->fSize1 << endl;
-            cout << "Tamanho final: " << this->fSize2 << endl;
+        if (this->size1 > 0) {
+            cout << "Tamanho inicial: " << this->size1 << endl;
+            cout << "Tamanho final: " << this->size2 << endl;
         }
-        if (this->fReplyCod > 0) {
-            cout << "Reply code: " << this->fReplyCod << endl;
+        if (this->replyCod > 0) {
+            cout << "Reply code: " << this->replyCod << endl;
         }
-        if (this->fReplyMsg != "") {
-            cout << "Reply Message: " << this->fReplyMsg << endl;
+        if (this->replyMsg != "") {
+            cout << "Reply Message: " << this->replyMsg << endl;
         }
     }
 
@@ -293,15 +295,9 @@ public:
         return up;
     }
 
-
-
-
-
     void aplicaFiltros() {
 
         int submenu;
-        int port1=-1, port2=-1, size1=-1, size2=-1, replyCod=-1;
-        string dataHoraInicial="", dataHoraFinal="", ip="", comando="", mime="", replyMsg="";
         system("cls");
         cout << "1 - Data Hora" << endl;
         cout << "2 - IP" << endl;
@@ -322,7 +318,7 @@ public:
                 break;
             case 2:
                 do {
-                    cout << "Informe endereço IP." << endl;
+                    cout << "Informe endereço IP: " << endl;
                     cin >> ip;
                     if (ip == "") {
                         cout << "Valor invalido, insira novamente" << endl;
@@ -340,7 +336,7 @@ public:
                         cout << "Valores invalidos, informe novamente!" << endl;
                     }
                 } while (port1 < 1 && port2 < 1 && port1 > port2);
-                obj->filtroPortas(port1, port2);
+                this->filtroPortas(port1, port2);
                 break;
             case 4:
                 do {
@@ -350,7 +346,7 @@ public:
                         cout << "Valor invalido, informe novamente!" << endl;
                     }
                 } while (comando == "");
-                obj->filtroComando(comando);
+                this->filtroComando(comando);
                 break;
             case 5:
                 do {
@@ -360,7 +356,7 @@ public:
                         cout << "Valor invalido, informe novamente!" << endl;
                     }
                 } while (mime == "");
-                obj->filtroMimeType(mime);
+                this->filtroMimeType(mime);
                 break;
             case 6:
                 do {
@@ -372,7 +368,7 @@ public:
                         cout << "Valores invalidos, informe novamente!" << endl;
                     }
                 } while (size1 < 1 && size2 < 1 && size1 > size2);
-                obj->filtroTamanho(size1, size2);
+                this->filtroTamanho(size1, size2);
                 break;
             case 7:
                 do {
@@ -382,7 +378,7 @@ public:
                         cout << "Valor invalido, informe novamente!" << endl;
                     }
                 } while (replyCod < 1);
-                obj->filtroReplyCode(replyCod);
+                this->filtroReplyCode(replyCod);
                 break;
             case 8:
                 do {
@@ -392,7 +388,7 @@ public:
                         cout << "Valor invalido, informe novamente!" << endl;
                     }
                 } while (replyMsg == "");
-                obj->filtroReplyMsg(replyMsg);
+                this->filtroReplyMsg(replyMsg);
                 break;
             default:
                 cout << "Opcao invalida" << endl;
@@ -403,9 +399,6 @@ public:
 
 };
 
-
-void filtros(Sistema *obj) {
-}
 
 int main() {
     int opcao;
@@ -425,7 +418,7 @@ int main() {
 
         switch (opcao) {
             case 1:
-                filtros(obj);
+                obj->aplicaFiltros();
                 break;
             case 2:
                 obj->limpaFiltros();
