@@ -15,18 +15,52 @@ using namespace std;
 
 class DataHora {
 private:
-    time_t timestamp;
+    time_t timestamp, dataInicial, dataFinal;
+    struct tm t = {};
 public:
     DataHora(string timestamp) {
         istringstream issTimestamp(timestamp);
         issTimestamp >> this->timestamp;
     }
 
-    string getValue() {
+    string getDataHora() {
         char buff[20];
         time_t now = this->timestamp;
         strftime(buff, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
         return buff;
+    }
+
+    void setDataHoraInicial(time_t dataInicialInserida){
+        this -> dataInicial = dataInicialInserida;
+    }
+    void setDataHoraFinal(time_t dataFinalInserida){
+        this -> dataFinal = dataFinalInserida;
+    }
+//    time_t getTimestamp() {
+//        istringstream iss(buff);
+//        if (iss >> get_time(&t, "%Y-%m-%dT%H:%M:%S"))
+//                {
+//                    return dateCheck = mktime(&t);
+//                }
+//    }
+    bool operator< (DataHora &param)
+    {
+        return this->timestamp < param.timestamp;
+    }
+
+    bool operator> (DataHora &param)
+    {
+        return this->timestamp > param.timestamp;
+    }
+
+    bool operator== (DataHora &param)
+    {
+        return this->timestamp == param.timestamp;
+    }
+
+    bool operator!= (DataHora &param)
+    {
+        return this->timestamp != param.timestamp;
     }
 };
 
@@ -83,8 +117,8 @@ public:
         return atributo;
     }
 
-    DataHora *getDataHora() {
-        return this->dataHora;
+    DataHora *getDataHoraSistema() {
+        return dataHora;
     }
 
     string getOrigemIp() {
@@ -133,6 +167,7 @@ private:
     string dataHoraInicial="", dataHoraFinal="", ip="", comando="", mime="", replyMsg="";
     char aux1, aux2, aux3, aux4, aux5;
     struct tm t = {};
+    time_t data1, data2;
 public:
     Sistema(string arqLog) {
         fstream arq;
@@ -184,10 +219,10 @@ public:
     }
 
     //TODO FILTRO O ESQUEMA DO CIN
-    void filtroData(string data1, string data2) {
+    void filtroData(DataHora* data1, DataHora* data2) {
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it){
-            if((*it)->getDataHora()->getValue() < data1 || (*it)->getDataHora()->getValue() > data2){
+            if((*it)->getDataHoraSistema() < data1 || (*it)->getDataHoraSistema() > data2){
                 (*it)->setFiltro(false);
             }
         }
@@ -267,7 +302,7 @@ public:
 
         cout << "Filtros: " << endl;
         if (this->dataHoraInicial != "") {
-            cout << "Data hora inicial: " << this->dataHoraInicial << endl;
+            cout << "Data hora inicial: " << this->dataHoraInicial << endl; // TERMINAR
             cout << "Data hora final: " << this->dataHoraFinal << endl;
         }
         if (this->ip != "") {
@@ -320,31 +355,33 @@ public:
             case 1:
                 {
             //LE DATA 1
-                cout << "Informe data inicial (" << endl;
+                cout << "Informe data inicial " << endl;
                 cin >> dataHoraInicial;
-
                 istringstream iss(dataHoraInicial);
                 if (iss >> get_time(&t, "%Y-%m-%dT%H:%M:%S"))
                     {
-                        mktime(&t);
+                        data1 = mktime(&t);
                     }
                 else
                 {
                     cout << "Valor invalido\n";
                 }
             //LE DATA 2
-                cout << "Informe data final (" << endl;
+                cout << "Informe data final " << endl;
                 cin >> dataHoraFinal;
 
                 istringstream iss2(dataHoraFinal);
                 if (iss2 >> get_time(&t, "%Y-%m-%dT%H:%M:%S"))
                     {
-                        mktime(&t);
+                        data2 = mktime(&t);
                     }
                 else
                 {
                     cout << "Valor invalido\n";
                 }
+                DataHora *dataUm = new DataHora(dataHoraInicial);
+                DataHora *dataDois = new DataHora(dataHoraFinal);
+                this->filtroData(dataUm, dataDois);
 
             }
                 break;
@@ -431,21 +468,22 @@ public:
     void visualizarDados() {
         vector<Registro *> logsValidos = this->getLogsValidos();
         for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
-            cout << "Data hora:             " << (*it)->getDataHora()->getValue() << endl;
+            cout << "Data hora:             " << (*it)->getDataHoraSistema()->getDataHora() << endl;
             cout << "IP de Origem:          " << (*it)->getOrigemIp() << endl;
             cout << "Porta de Origem:       " << (*it)->getOrigemPorta() << endl;
             cout << "Comando:               " << (*it)->getComando()<< endl;
-            cout << "Mime Type:             " << (*it)->getMimeType() << endl;
+            if((*it)->getMimeType() == ""){
+                cout << "Mime Type:             " << endl;
+            } else {
+                cout << "Mime Type:             " << (*it)->getMimeType() << endl;
+            }
             if ((*it)->getFileSize() == 0) {
                 cout << "Tamanho do Arquivo:    " << endl;
             } else {
                 cout << "Tamanho do Arquivo:    " << (*it)->getFileSize() << endl;
             }
-            if ((*it)->getReplyCode() == 0) {
-                cout << "Codigo de Resposta:    " << endl;
-            } else {
-                cout << "Codigo de Resposta:    " << (*it)->getReplyCode() << endl;
-            }
+
+            cout << "Codigo de Resposta:    " << (*it)->getReplyCode() << endl;
             cout << "Mensagem de Resposta:  " << (*it)->getReplyMsg() << endl;
             cout << endl;
         }
@@ -456,14 +494,16 @@ public:
         fstream arq;
         cout << "Insira o nome do arquivo onde deseja salvar a pesquisa filtrada: ";
         cin >> arquivoDeSerializacao;
+        arquivoDeSerializacao += ".txt";
 
         arq.open(arquivoDeSerializacao.c_str(), fstream::out);
         if(arq.is_open()){
+            cout << "Arquivo de serializacao criado com sucesso!" << endl;
             arq << "timestamp\tip\tport\tcommand\tmime_type\tfile_size\treply_code\treply_msg\n";
             while(!arq.eof()){
                 vector<Registro *> logsValidos = this->getLogsValidos();
                 for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it){
-                    arq << (*it)->getDataHora()->getValue() << '\t'
+                    arq << (*it)->getDataHoraSistema()->getDataHora() << '\t'
                     << (*it)->getOrigemIp() << '\t'
                     << (*it)->getOrigemPorta() << '\t'
                     << (*it)->getComando() << '\t';
@@ -483,7 +523,12 @@ public:
                     arq << (*it)->getReplyMsg() << endl;
                 }
             }
+            arq.close();
         }
+        cout << "\n--------------------------" << endl;
+        cout << "Serializacao bem sucedida!" << endl;
+        cout << "\n--------------------------" << endl;
+
     }
 };
 
