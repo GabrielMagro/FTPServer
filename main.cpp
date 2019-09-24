@@ -453,7 +453,7 @@ public:
             case 8:
                 do {
                     cout << "Informe o mensagem de resposta" << endl;
-                    cin >> replyMsg;
+                    getline(cin, replyMsg);
                     if (replyMsg == "") {
                         cout << "Valor invalido, informe novamente!" << endl;
                     }
