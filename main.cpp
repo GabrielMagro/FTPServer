@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <ostream>
+#include <locale>
+#include <iomanip>
 
 using namespace std;
 
@@ -20,11 +22,36 @@ public:
         issTimestamp >> this->timestamp;
     }
 
-    string getValue() {
+    string getDataHora() {
         char buff[20];
         time_t now = this->timestamp;
         strftime(buff, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
         return buff;
+    }
+
+    time_t getDataHoraTimeT() {
+        return this->timestamp;
+    }
+
+
+    bool operator==(const DataHora &dados) const {
+        return this->timestamp == dados.timestamp;
+    }
+
+    bool operator>(const DataHora &dados) const {
+        return this->timestamp > dados.timestamp;
+    }
+
+    bool operator<(const DataHora &dados) const {
+        return this->timestamp < dados.timestamp;
+    }
+
+    bool operator>=(const DataHora &dados) const {
+        return this->timestamp >= dados.timestamp;
+    }
+
+    bool operator<=(const DataHora &dados) const {
+        return this->timestamp <= dados.timestamp;
     }
 };
 
@@ -81,7 +108,7 @@ public:
         return atributo;
     }
 
-    DataHora *getDataHora() {
+    DataHora *getDataHoraSistema() {
         return dataHora;
     }
 
@@ -127,8 +154,9 @@ class Sistema {
 private:
     vector<Registro *> logs;
     //filtros
-    int port1=-1, port2=-1, size1=-1, size2=-1, replyCod=-1;
-    string dataHoraInicial="", dataHoraFinal="", ip="", comando="", mime="", replyMsg="";
+    int port1 = -1, port2 = -1, size1 = -1, size2 = -1, replyCod = -1;
+    string dataHoraInicial = "", dataHoraFinal = "", ip = "", comando = "", mime = "", replyMsg = "";
+
 public:
     Sistema(string arqLog) {
         fstream arq;
@@ -147,10 +175,6 @@ public:
         }
     }
 
-    vector<Registro *> getLogs() {
-        return this->logs;
-    }
-
     vector<Registro *> getLogsValidos() {
         vector<Registro *> logsValidos;
         for (vector<Registro *>::iterator it = this->logs.begin(); it != this->logs.end(); ++it) {
@@ -166,21 +190,66 @@ public:
             (*it)->setFiltro(true);
         }
         //valores padrao
-        this->port1=-1;
-        this->port2=-1;
-        this->size1=-1;
-        this->size2=-1;
-        this->replyCod=-1;
-        this->dataHoraInicial="";
-        this->dataHoraFinal="";
-        this->ip="";
-        this->comando="";
-        this->mime="";
-        this->replyMsg="";
+        this->port1 = -1;
+        this->port2 = -1;
+        this->size1 = -1;
+        this->size2 = -1;
+        this->replyCod = -1;
+        this->dataHoraInicial = "";
+        this->dataHoraFinal = "";
+        this->ip = "";
+        this->comando = "";
+        this->mime = "";
+        this->replyMsg = "";
     }
 
-    //TODO FILTRO O ESQUEMA DO CIN
-    void filtroData() {}
+    void filtroData(string data1, string data2) {
+        struct tm date1 = {};
+        struct tm date2 = {};
+
+        stringstream issData1(data1);
+        stringstream issData2(data2);
+
+        bool valido = true;
+
+        time_t dt1;
+        time_t dt2;
+
+        if (issData1 >> get_time(&date1, "%Y-%m-%dT%H:%M:%S")) {
+            dt1 = mktime(&date1);
+        } else {
+            valido = false;
+        }
+        if (issData2 >> get_time(&date2, "%Y-%m-%dT%H:%M:%S")) {
+            dt2 = mktime(&date2);
+        } else {
+            valido = false;
+        }
+
+        if (!valido) {
+            cout << "Datas invalidas" << endl;
+            this->dataHoraInicial = "";
+            this->dataHoraFinal = "";
+        } else if (dt1 == dt2) {
+            cout << "Datas iguais, filtro nao aplicado" << endl;
+            this->dataHoraInicial = "";
+            this->dataHoraFinal = "";
+        } else if (dt1 > dt2) {
+            this->dataHoraInicial = "";
+            this->dataHoraFinal = "";
+            cout << "Data Inicial nao pode ser maior que data final, filtro nao aplicado" << endl;
+        } else {
+            vector<Registro *> logsValidos = this->getLogsValidos();
+            int dataFiltro1 = dt1;
+            int dataFiltro2 = dt2;
+            for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
+                int dataRegistro = (*it)->getDataHoraSistema()->getDataHoraTimeT();
+                if (dataRegistro < dt1 || dataRegistro > dt2) {
+                    (*it)->setFiltro(false);
+                }
+            }
+        }
+    }
 
     void filtroIp(string ip) {
         vector<Registro *> logsValidos = this->getLogsValidos();
@@ -254,33 +323,37 @@ public:
 
     void mostraFiltrosAtivos() {
 
-        cout << "Filtros: " << endl;
-        if (this->dataHoraInicial != "") {
-            cout << "Data hora inicial: " << this->dataHoraInicial << endl;
-            cout << "Data hora final: " << this->dataHoraFinal << endl;
-        }
-        if (this->ip != "") {
-            cout << "IP: " << this->ip << endl;
-        }
-        if (this->port1 > 0) {
-            cout << "Porta inicial: " << this->port1 << endl;
-            cout << "Porta final: " << this->port2 << endl;
-        }
-        if (this->comando != "") {
-            cout << "Comando: " << this->comando << endl;
-        }
-        if (this->mime != "") {
-            cout << "Mime Type: " << this->mime << endl;
-        }
-        if (this->size1 > 0) {
-            cout << "Tamanho inicial: " << this->size1 << endl;
-            cout << "Tamanho final: " << this->size2 << endl;
-        }
-        if (this->replyCod > 0) {
-            cout << "Reply code: " << this->replyCod << endl;
-        }
-        if (this->replyMsg != "") {
-            cout << "Reply Message: " << this->replyMsg << endl;
+        if (this->dataHoraInicial == "" && this->ip == "" && this->port1 < 1 && this->comando == "" &&
+            this->mime == "" && this->size1 < 1 && this->replyCod < 1 && this->replyMsg == "") {
+            cout << "Sem filtros aplicados" << endl;
+        } else {
+            if (this->dataHoraInicial != "") {
+                cout << "Data hora inicial: " << this->dataHoraInicial << endl;
+                cout << "Data hora final: " << this->dataHoraFinal << endl;
+            }
+            if (this->ip != "") {
+                cout << "IP: " << this->ip << endl;
+            }
+            if (this->port1 > 0) {
+                cout << "Porta inicial: " << this->port1 << endl;
+                cout << "Porta final: " << this->port2 << endl;
+            }
+            if (this->comando != "") {
+                cout << "Comando: " << this->comando << endl;
+            }
+            if (this->mime != "") {
+                cout << "Mime Type: " << this->mime << endl;
+            }
+            if (this->size1 > 0) {
+                cout << "Tamanho inicial: " << this->size1 << endl;
+                cout << "Tamanho final: " << this->size2 << endl;
+            }
+            if (this->replyCod > 0) {
+                cout << "Reply code: " << this->replyCod << endl;
+            }
+            if (this->replyMsg != "") {
+                cout << "Reply Message: " << this->replyMsg << endl;
+            }
         }
     }
 
@@ -307,15 +380,15 @@ public:
         cin >> submenu;
         switch (submenu) {
             case 1:
-                //TODO TRANFORMAR PARA POSIX
-//            cout << "Data Incial:";
-//            cin >> dataHoraInicial;
-//            cout << "Data Final";
-//            cin >> dataHoraFinal;
+                cout << "Informe data inicial " << endl;
+                cin >> dataHoraInicial;
+                cout << "Informe data final " << endl;
+                cin >> dataHoraFinal;
+                this->filtroData(dataHoraInicial, dataHoraFinal);
                 break;
             case 2:
                 do {
-                    cout << "Informe endereço IP: " << endl;
+                    cout << "Informe endereco IP: " << endl;
                     cin >> ip;
                     if (ip == "") {
                         cout << "Valor invalido, insira novamente" << endl;
@@ -395,30 +468,78 @@ public:
 
     void visualizarDados() {
         vector<Registro *> logsValidos = this->getLogsValidos();
-        for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
-            cout << "Data hora:             " << (*it)->getDataHora()->getValue() << endl;
-            cout << "IP de Origem:          " << (*it)->getOrigemIp() << endl;
-            cout << "Porta de Origem:       " << (*it)->getOrigemPorta() << endl;
-            cout << "Comando:               " << (*it)->getComando()<< endl;
-            cout << "Mime Type:             " << (*it)->getMimeType() << endl;
-            if ((*it)->getFileSize() == 0) {
-                cout << "Tamanho do Arquivo:    " << endl;
-            } else {
-                cout << "Tamanho do Arquivo:    " << (*it)->getFileSize() << endl;
+
+        if (logsValidos.size() == 0) {
+            cout << "Nenhum log valido perante os filtros" << endl;
+        } else {
+            for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
+                cout << "Data hora:             " << (*it)->getDataHoraSistema()->getDataHora() << endl;
+                cout << "IP de Origem:          " << (*it)->getOrigemIp() << endl;
+                cout << "Porta de Origem:       " << (*it)->getOrigemPorta() << endl;
+                cout << "Comando:               " << (*it)->getComando() << endl;
+                cout << "Mime Type:             " << (*it)->getMimeType() << endl;
+                if ((*it)->getFileSize() == 0) {
+                    cout << "Tamanho do Arquivo:    " << endl;
+                } else {
+                    cout << "Tamanho do Arquivo:    " << (*it)->getFileSize() << endl;
+                }
+                if ((*it)->getReplyCode() == 0) {
+                    cout << "Codigo de Resposta:    " << endl;
+                } else {
+                    cout << "Codigo de Resposta:    " << (*it)->getReplyCode() << endl;
+                }
+                cout << "Mensagem de Resposta:  " << (*it)->getReplyMsg() << endl;
+                cout << endl;
             }
-            if ((*it)->getReplyCode() == 0) {
-                cout << "Codigo de Resposta:    " << endl;
-            } else {
-                cout << "Codigo de Resposta:    " << (*it)->getReplyCode() << endl;
-            }
-            cout << "Mensagem de Resposta:  " << (*it)->getReplyMsg() << endl;
-            cout << endl;
         }
     }
 
-    //TODO exportar
     void exportar() {
+        string arquivoDeSerializacao;
+        fstream arq;
+        cout << "Insira o nome do arquivo onde deseja salvar a pesquisa filtrada: ";
+        cin >> arquivoDeSerializacao;
+        arquivoDeSerializacao += ".txt";
 
+        arq.open(arquivoDeSerializacao.c_str(), fstream::out);
+
+        vector<Registro *> logsValidos = this->getLogsValidos();
+
+        if (arq.is_open()) {
+            cout << "Serializando..." << endl;
+            arq << "timestamp\tip\tport\tcommand\tmime_type\tfile_size\treply_code\treply_msg\n";
+            for (vector<Registro *>::iterator it = logsValidos.begin(); it != logsValidos.end(); ++it) {
+                arq << (*it)->getDataHoraSistema()->getDataHora() << '\t'
+                    << (*it)->getOrigemIp() << '\t'
+                    << (*it)->getOrigemPorta() << '\t'
+                    << (*it)->getComando() << '\t';
+
+                if ((*it)->getMimeType() == "") {
+                    arq << "-" << '\t';
+                } else {
+                    arq << (*it)->getMimeType() << '\t';
+                }
+                if ((*it)->getFileSize() == 0) {
+                    arq << "-" << '\t';
+                } else {
+                    arq << (*it)->getFileSize() << '\t';
+                }
+                if ((*it)->getReplyCode() == 0) {
+                    arq << "-" << '\t';
+                } else {
+                    arq << (*it)->getReplyCode() << '\t';
+                }
+                if ((*it)->getReplyMsg() == "") {
+                    arq << "-" << '\t';
+                } else {
+                    arq << (*it)->getReplyMsg() << endl;
+                }
+            }
+            arq.close();
+        }
+        cout << "--------------------------" << endl;
+        cout << "Serializacao bem sucedida!" << endl;
+        cout << "--------------------------" << endl;
     }
 };
 
@@ -454,7 +575,9 @@ int main() {
             case 5:
                 obj->exportar();
                 break;
-
+            default:
+                cout << "Opcao invalida"<<endl;
+                break;
         }
     }
 
